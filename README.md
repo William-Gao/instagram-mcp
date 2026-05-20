@@ -4,13 +4,21 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP](https://img.shields.io/badge/MCP-1.2+-purple.svg)](https://modelcontextprotocol.io/)
 
-A feature-complete Model Context Protocol (MCP) server for the **Instagram Platform API with Instagram Login** (the modern flow Meta launched in July 2024). No Facebook Page required.
+A Model Context Protocol server for Instagram that uses Meta's **Instagram Platform API with Instagram Login** (`graph.instagram.com`, `IGAA…` tokens). **No Facebook Page required.** **No private/scraping APIs.** 27 tools covering profile, media, publishing, comments, insights, and DMs — verified live against a real account.
 
-**Why this exists.** Every other Instagram MCP server falls into one of two camps:
-1. Uses the old **Facebook Graph API** path (`graph.facebook.com`), which requires linking your IG account to a Facebook Page and using an `EAA…` token.
-2. Uses the **unofficial private API** (instagrapi, username/password login, Chrome session scraping), which risks getting your account banned.
+## How this is different from other Instagram MCPs
 
-This server uses the **official Instagram Platform API with Instagram Login** (`graph.instagram.com`, `IGAA…` tokens) and exposes ~25 tools covering profile, media, publishing, comments, insights, hashtags, business discovery, and DMs.
+| Project | Auth model | FB Page required | Risk of ban | Tools | Status |
+|---|---|---|---|---|---|
+| **this (`William-Gao/instagram-mcp`)** | **Instagram Login API** (`IGAA…`) | **No** | **None — official API** | **27 (24 working ✅)** | Active |
+| [`mcpware/instagram-mcp`](https://github.com/mcpware/instagram-mcp) | Facebook Graph API (`EAA…`) | Yes | None — official API | 23 | Active |
+| [`AleemHaider/instagram-mcp`](https://github.com/AleemHaider/instagram-mcp) | Facebook Graph API (`EAA…`) | Yes | None — official API | ~15 | Active |
+| [`supercorp-ai/instagram-mcp`](https://github.com/supercorp-ai/instagram-mcp) | Instagram Login API (`IGAA…`) | No | None — official API | 4 | Active |
+| `instagrapi`-based MCPs (multiple) | Username/password / session cookies | No | **High** — private API, accounts banned | varies | Active |
+
+The gap this fills: Meta launched **Instagram Login** in July 2024 so creators can use the API *without* a linked Facebook Page. Before this project, the only MCP that spoke that auth flow was `supercorp-ai/instagram-mcp` with 4 tools. Everything else either requires you to maintain a FB Page or scrapes Instagram through the unofficial mobile API.
+
+**TL;DR — if your access token starts with `IGAA…`, no other MCP gives you full coverage. That's why this exists.**
 
 ## Tool catalog (27)
 
@@ -71,7 +79,7 @@ Status legend: ✅ working, ⚠ requires Advanced Access via Meta App Review, �
 ## Setup
 
 ```bash
-git clone https://github.com/williamgao/instagram-mcp.git
+git clone https://github.com/William-Gao/instagram-mcp.git
 cd instagram-mcp
 python -m venv .venv
 source .venv/bin/activate
