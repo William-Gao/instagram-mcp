@@ -14,7 +14,7 @@ MEDIA_INSIGHT_METRICS = {
     "IMAGE": "reach,likes,comments,saved,shares,total_interactions,views",
     "VIDEO": "reach,likes,comments,saved,shares,total_interactions,views",
     "CAROUSEL_ALBUM": "reach,likes,comments,saved,shares,total_interactions,views",
-    "REELS": "reach,likes,comments,saved,shares,total_interactions,views,ig_reels_avg_watch_time,ig_reels_video_view_total_time",
+    "REELS": "reach,likes,comments,saved,shares,total_interactions,views,ig_reels_avg_watch_time,ig_reels_video_view_total_time,reels_skip_rate",
     "STORY": "reach,replies,views,navigation",
 }
 
@@ -50,13 +50,29 @@ async def get_media_details(media_id: str) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def get_media_insights(media_id: str, metrics: str | None = None) -> dict[str, Any]:
+async def get_media_insights(
+    media_id: str,
+    metrics: str | None = None,
+    breakdown: str | None = None,
+) -> dict[str, Any]:
     """Get performance insights (reach, likes, saves, etc.) for a media item.
 
     Args:
         media_id: Instagram media ID.
         metrics: Comma-separated metric list. Defaults are auto-selected per media type
             (IMAGE, VIDEO, CAROUSEL_ALBUM, REELS, STORY). Pass your own to override.
+        breakdown: Optional breakdown dimension. Meta heavily restricts which breakdowns
+            are valid at the media level. The ONLY two valid media-level breakdowns are:
+            - "action_type" — works with the `profile_activity` metric (Feed posts and
+              Stories only; not Reels).
+            - "story_navigation_action_type" — works with the `navigation` metric on
+              Stories only.
+            Notably, `follow_type` (FOLLOWER vs NON_FOLLOWER) is NOT valid at the media
+            level — Meta returns "Incompatible breakdowns" if you try. To get a
+            follower/non-follower split, call `get_account_insights` with
+            metric="views,reach" and breakdown="follow_type", or use the
+            `get_account_audience_split` convenience tool. Similarly, demographic
+            breakdowns (age/gender/country/city) are account-level only.
     """
     try:
         client = get_client()
@@ -65,7 +81,10 @@ async def get_media_insights(media_id: str, metrics: str | None = None) -> dict[
             info = await client.get(media_id, params={"fields": "media_type,media_product_type"})
             mtype = (info.get("media_product_type") or info.get("media_type") or "IMAGE").upper()
             chosen = MEDIA_INSIGHT_METRICS.get(mtype, MEDIA_INSIGHT_METRICS["IMAGE"])
-        data = await client.get(f"{media_id}/insights", params={"metric": chosen})
+        params: dict[str, Any] = {"metric": chosen}
+        if breakdown:
+            params["breakdown"] = breakdown
+        data = await client.get(f"{media_id}/insights", params=params)
         return {"ok": True, **data}
     except Exception as e:
         return format_error(e)

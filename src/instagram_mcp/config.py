@@ -13,6 +13,7 @@ class Config:
     app_secret: str | None
     api_version: str
     base_url: str
+    data_dir: str
 
     @classmethod
     def from_env(cls) -> Config:
@@ -27,10 +28,14 @@ class Config:
         version = os.getenv("INSTAGRAM_API_VERSION", "v23.0").strip()
         if not version.startswith("v"):
             version = f"v{version}"
+        data_dir = os.getenv("INSTAGRAM_DATA_DIR", "").strip() or os.path.expanduser(
+            "~/.instagram-mcp"
+        )
         return cls(
             access_token=token,
             app_id=(os.getenv("INSTAGRAM_APP_ID") or None),
             app_secret=(os.getenv("INSTAGRAM_APP_SECRET") or None),
             api_version=version,
             base_url=f"https://graph.instagram.com/{version}",
+            data_dir=data_dir,
         )
