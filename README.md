@@ -12,48 +12,50 @@ A feature-complete Model Context Protocol (MCP) server for the **Instagram Platf
 
 This server uses the **official Instagram Platform API with Instagram Login** (`graph.instagram.com`, `IGAA…` tokens) and exposes ~25 tools covering profile, media, publishing, comments, insights, hashtags, business discovery, and DMs.
 
-## Tool catalog (25)
+## Tool catalog (27)
+
+Status legend: ✅ working, ⚠ requires Advanced Access via Meta App Review, 🚫 not supported by the Instagram Login API (Facebook Graph API only).
 
 ### Auth & profile
-- `validate_access_token` — verify the configured token
-- `refresh_access_token` — extend a long-lived token by 60 days
-- `get_profile_info` — bio, follower/following counts, media count, etc.
-- `get_account_pages` — compatibility shim (Instagram Login has no Pages concept)
+- ✅ `validate_access_token` — verify the configured token
+- ✅ `refresh_access_token` — extend a long-lived token by 60 days
+- ✅ `get_profile_info` — bio, follower/following counts, media count, etc.
+- ✅ `get_account_pages` — compatibility shim (Instagram Login has no Pages concept)
 
 ### Media
-- `get_media_posts` — paginate the account's recent posts
-- `get_media_details` — full details for a single media item (incl. carousel children)
-- `get_media_insights` — reach/likes/saves/shares/etc. (auto-picks metrics by media type)
-- `get_stories` — currently active stories (24h)
-- `get_mentions` — posts tagging or @mentioning the account
+- ✅ `get_media_posts` — paginate the account's recent posts
+- ✅ `get_media_details` — full details for a single media item (incl. carousel children)
+- ✅ `get_media_insights` — reach/likes/saves/shares/views/etc. (auto-picks metrics by media type)
+- ✅ `get_stories` — currently active stories (24h)
+- ✅ `get_mentions` — posts tagging or @mentioning the account
 
 ### Publishing
-- `publish_image` — single image post
-- `publish_video` — single feed video
-- `publish_reel` — Reels (vertical short video), with `share_to_feed`
-- `publish_carousel` — 2–10 image/video carousel
-- `get_content_publishing_limit` — remaining posts in 24h window
+- ✅ `publish_image` — single image post
+- ✅ `publish_video` — single feed video
+- ✅ `publish_reel` — Reels (vertical short video), with `share_to_feed`
+- ✅ `publish_carousel` — 2–10 image/video carousel
+- ✅ `get_content_publishing_limit` — remaining posts in 24h window
 
 ### Comments
-- `get_comments` — list comments + nested replies
-- `post_comment` — top-level comment on your own post
-- `reply_to_comment` — reply to a specific comment
-- `delete_comment` — delete a comment
-- `hide_comment` — hide/unhide a comment
-- `toggle_media_comments` — enable/disable comments on a post
+- ✅ `get_comments` — list comments + nested replies
+- ✅ `post_comment` — top-level comment on your own post
+- ✅ `reply_to_comment` — reply to a specific comment
+- ✅ `delete_comment` — delete a comment
+- ✅ `hide_comment` — hide/unhide a comment
+- ✅ `toggle_media_comments` — enable/disable comments on a post
 
 ### Insights
-- `get_account_insights` — reach, profile views, audience demographics, etc.
+- ✅ `get_account_insights` — reach, profile views, audience demographics, etc.
 
-### Discovery
-- `search_hashtag` — resolve hashtag name to ID
-- `get_hashtag_media` — top or recent media for a hashtag
-- `business_discovery` — public profile + recent media for any Business/Creator
+### Discovery (FB Graph API only — these always return a friendly error)
+- 🚫 `search_hashtag` — Instagram Login API does not expose `ig_hashtag_search`
+- 🚫 `get_hashtag_media` — same restriction
+- 🚫 `business_discovery` — Instagram Login API does not expose `business_discovery`
 
-### Messaging (requires Advanced Access)
-- `get_conversations` — list DM threads
-- `get_conversation_messages` — read messages in a thread
-- `send_dm` — send a DM (24-hour window rule applies)
+### Messaging (requires Advanced Access via Meta App Review)
+- ⚠ `get_conversations` — list DM threads
+- ⚠ `get_conversation_messages` — read messages in a thread
+- ⚠ `send_dm` — send a DM (24-hour window rule applies)
 
 ## Prerequisites
 
@@ -150,6 +152,16 @@ pytest
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## Known limitations
+
+The Instagram Login API is more restrictive than the Facebook Graph API in three areas:
+
+1. **`business_discovery`** — Looking up arbitrary public profiles is not supported. The endpoint exists on `graph.facebook.com` only.
+2. **Hashtag search** (`ig_hashtag_search`, `top_media`, `recent_media`) — Not exposed on `graph.instagram.com`. Only available via the FB Graph API path.
+3. **DMs** — Available, but require `instagram_business_manage_messages` with Advanced Access. Meta only grants this after App Review.
+
+If you need any of these three capabilities, you must link your IG to a Facebook Page and use a Facebook-Graph-based MCP like [`mcpware/instagram-mcp`](https://github.com/mcpware/instagram-mcp) or [`AleemHaider/instagram-mcp`](https://github.com/AleemHaider/instagram-mcp).
 
 ## Acknowledgements
 

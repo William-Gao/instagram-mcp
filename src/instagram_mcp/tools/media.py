@@ -11,11 +11,11 @@ MEDIA_FIELDS = (
 )
 
 MEDIA_INSIGHT_METRICS = {
-    "IMAGE": "impressions,reach,likes,comments,saved,shares,total_interactions,profile_visits,follows,profile_activity",
-    "VIDEO": "impressions,reach,likes,comments,saved,shares,total_interactions,profile_visits,follows,video_views",
-    "CAROUSEL_ALBUM": "impressions,reach,likes,comments,saved,shares,total_interactions",
-    "REELS": "reach,likes,comments,saved,shares,total_interactions,plays,ig_reels_avg_watch_time,ig_reels_video_view_total_time",
-    "STORY": "impressions,reach,replies,exits,taps_forward,taps_back",
+    "IMAGE": "reach,likes,comments,saved,shares,total_interactions,views",
+    "VIDEO": "reach,likes,comments,saved,shares,total_interactions,views",
+    "CAROUSEL_ALBUM": "reach,likes,comments,saved,shares,total_interactions,views",
+    "REELS": "reach,likes,comments,saved,shares,total_interactions,views,ig_reels_avg_watch_time,ig_reels_video_view_total_time",
+    "STORY": "reach,replies,views,navigation",
 }
 
 
