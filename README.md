@@ -96,9 +96,9 @@ python -m instagram_mcp
 # stdio MCP server; connect a client to verify
 ```
 
-## Use with Droid
+## Use with Claude Desktop
 
-Add to `~/.factory/mcp.json`:
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
@@ -108,18 +108,13 @@ Add to `~/.factory/mcp.json`:
       "args": ["-m", "instagram_mcp"],
       "env": {
         "INSTAGRAM_ACCESS_TOKEN": "IGAA..."
-      },
-      "disabled": false
+      }
     }
   }
 }
 ```
 
-Restart Droid; the `instagram___*` tools will appear.
-
-## Use with Claude Desktop
-
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (same shape as Droid above). Restart Claude Desktop.
+Restart Claude Desktop; the `instagram___*` tools will appear.
 
 ## Use with Claude Code / Cursor
 
@@ -127,6 +122,10 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (same s
 claude mcp add instagram /absolute/path/to/instagram-mcp/.venv/bin/python -m instagram_mcp \
   --env INSTAGRAM_ACCESS_TOKEN=IGAA...
 ```
+
+## Use with any other MCP client
+
+This is a standard stdio MCP server. Point your client's MCP config at the `python -m instagram_mcp` command with `INSTAGRAM_ACCESS_TOKEN` set in the environment.
 
 ## Configuration
 
