@@ -14,6 +14,9 @@ class Config:
     api_version: str
     base_url: str
     data_dir: str
+    fb_access_token: str | None
+    fb_ig_user_id: str | None
+    fb_base_url: str
 
     @classmethod
     def from_env(cls) -> Config:
@@ -31,6 +34,8 @@ class Config:
         data_dir = os.getenv("INSTAGRAM_DATA_DIR", "").strip() or os.path.expanduser(
             "~/.instagram-mcp"
         )
+        fb_token = (os.getenv("INSTAGRAM_FB_ACCESS_TOKEN") or "").strip() or None
+        fb_ig_user_id = (os.getenv("INSTAGRAM_FB_IG_USER_ID") or "").strip() or None
         return cls(
             access_token=token,
             app_id=(os.getenv("INSTAGRAM_APP_ID") or None),
@@ -38,4 +43,11 @@ class Config:
             api_version=version,
             base_url=f"https://graph.instagram.com/{version}",
             data_dir=data_dir,
+            fb_access_token=fb_token,
+            fb_ig_user_id=fb_ig_user_id,
+            fb_base_url=f"https://graph.facebook.com/{version}",
         )
+
+    @property
+    def has_fb_graph(self) -> bool:
+        return self.fb_access_token is not None

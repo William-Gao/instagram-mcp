@@ -30,19 +30,21 @@ class InstagramAPIError(Exception):
         }
 
 
-class InstagramClient:
-    """Thin async wrapper around graph.instagram.com.
+class _BaseGraphClient:
+    """Shared HTTP/retry/error machinery for both Instagram Login and Facebook Graph paths."""
 
-    Only Instagram Platform API endpoints (Instagram Login flow). Does NOT use
-    graph.facebook.com - those endpoints require a Facebook Page link.
-    """
-
-    def __init__(self, config: Config, http: httpx.AsyncClient | None = None) -> None:
-        self.config = config
+    def __init__(
+        self,
+        access_token: str,
+        base_url: str,
+        http: httpx.AsyncClient | None = None,
+    ) -> None:
+        self.access_token = access_token
+        self.base_url = base_url
         self._http = http or httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0))
         self._owns_http = http is None
 
-    async def __aenter__(self) -> InstagramClient:
+    async def __aenter__(self):
         return self
 
     async def __aexit__(self, *exc: Any) -> None:
@@ -54,10 +56,7 @@ class InstagramClient:
 
     def _url(self, path: str) -> str:
         path = path.lstrip("/")
-        # OAuth endpoints sit outside the versioned namespace
-        if path.startswith(("access_token", "refresh_access_token", "oauth/")):
-            return f"https://graph.instagram.com/{path}"
-        return f"{self.config.base_url}/{path}"
+        return f"{self.base_url}/{path}"
 
     async def request(
         self,
@@ -70,7 +69,7 @@ class InstagramClient:
         retries: int = 2,
     ) -> dict[str, Any]:
         params = dict(params or {})
-        params.setdefault("access_token", self.config.access_token)
+        params.setdefault("access_token", self.access_token)
         url = self._url(path)
         last_exc: Exception | None = None
         for attempt in range(retries + 1):
@@ -109,7 +108,6 @@ class InstagramClient:
                     status_code=response.status_code,
                 )
 
-            # Retry on 5xx or rate limit
             if response.status_code in (429, 500, 502, 503, 504) and attempt < retries:
                 await asyncio.sleep(1.5 * (2**attempt))
                 continue
@@ -127,3 +125,41 @@ class InstagramClient:
 
     async def delete(self, path: str, **kwargs: Any) -> dict[str, Any]:
         return await self.request("DELETE", path, **kwargs)
+
+
+class InstagramClient(_BaseGraphClient):
+    """Wrapper around graph.instagram.com (Instagram Login API, IGAA tokens).
+
+    Used for: own-account read/publish/comments/insights/DMs.
+    Does NOT support: business_discovery, hashtag search - those require the
+    Facebook Graph API path (see FBGraphClient).
+    """
+
+    def __init__(self, config: Config, http: httpx.AsyncClient | None = None) -> None:
+        super().__init__(config.access_token, config.base_url, http)
+        self.config = config
+
+    def _url(self, path: str) -> str:
+        path = path.lstrip("/")
+        # OAuth endpoints sit outside the versioned namespace
+        if path.startswith(("access_token", "refresh_access_token", "oauth/")):
+            return f"https://graph.instagram.com/{path}"
+        return f"{self.base_url}/{path}"
+
+
+class FBGraphClient(_BaseGraphClient):
+    """Wrapper around graph.facebook.com (Facebook Graph API, EAA tokens).
+
+    Used ONLY for endpoints that don't exist on graph.instagram.com:
+    - business_discovery (look up other public Business/Creator accounts)
+    - ig_hashtag_search and /{hashtag-id}/top_media|recent_media
+    - any FB-Page-scoped resources
+    """
+
+    def __init__(self, config: Config, http: httpx.AsyncClient | None = None) -> None:
+        if not config.fb_access_token:
+            raise InstagramAPIError(
+                "FBGraphClient requires INSTAGRAM_FB_ACCESS_TOKEN to be set"
+            )
+        super().__init__(config.fb_access_token, config.fb_base_url, http)
+        self.config = config

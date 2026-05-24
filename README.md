@@ -10,7 +10,7 @@ A Model Context Protocol server for Instagram that uses Meta's **Instagram Platf
 
 | Project | Auth model | FB Page required | Risk of ban | Tools | Status |
 |---|---|---|---|---|---|
-| **this (`William-Gao/instagram-mcp`)** | **Instagram Login API** (`IGAA…`) | **No** | **None — official API** | **27 (24 working ✅)** | Active |
+| **this (`William-Gao/instagram-mcp`)** | **Dual: IG Login + FB Graph** | **Optional** (only for discovery/hashtags) | **None — official API** | **30 (27 working ✅)** | Active |
 | [`mcpware/instagram-mcp`](https://github.com/mcpware/instagram-mcp) | Facebook Graph API (`EAA…`) | Yes | None — official API | 23 | Active |
 | [`AleemHaider/instagram-mcp`](https://github.com/AleemHaider/instagram-mcp) | Facebook Graph API (`EAA…`) | Yes | None — official API | ~15 | Active |
 | [`supercorp-ai/instagram-mcp`](https://github.com/supercorp-ai/instagram-mcp) | Instagram Login API (`IGAA…`) | No | None — official API | 4 | Active |
@@ -18,7 +18,9 @@ A Model Context Protocol server for Instagram that uses Meta's **Instagram Platf
 
 The gap this fills: Meta launched **Instagram Login** in July 2024 so creators can use the API *without* a linked Facebook Page. Before this project, the only MCP that spoke that auth flow was `supercorp-ai/instagram-mcp` with 4 tools. Everything else either requires you to maintain a FB Page or scrapes Instagram through the unofficial mobile API.
 
-**TL;DR — if your access token starts with `IGAA…`, no other MCP gives you full coverage. That's why this exists.**
+**This server is the only one that supports BOTH auth paths simultaneously.** Configure just `INSTAGRAM_ACCESS_TOKEN` (IGAA) and you get the 24 core tools without a Facebook Page. Add `INSTAGRAM_FB_ACCESS_TOKEN` (EAA) on top and you unlock `business_discovery`, hashtag search, and the higher-level competitor-analysis tools — without giving up anything on the IG Login side.
+
+**TL;DR — start with just IG Login. Add the FB Page later only if you need to look up other creators.**
 
 ## Tool catalog (27)
 
@@ -55,10 +57,13 @@ Status legend: ✅ working, ⚠ requires Advanced Access via Meta App Review, �
 ### Insights
 - ✅ `get_account_insights` — reach, profile views, audience demographics, etc.
 
-### Discovery (FB Graph API only — these always return a friendly error)
-- 🚫 `search_hashtag` — Instagram Login API does not expose `ig_hashtag_search`
-- 🚫 `get_hashtag_media` — same restriction
-- 🚫 `business_discovery` — Instagram Login API does not expose `business_discovery`
+### Discovery (opt-in via FB Graph API — set `INSTAGRAM_FB_ACCESS_TOKEN`)
+- ✅ `business_discovery` — public Business/Creator profile + recent media
+- ✅ `search_hashtag` — resolve hashtag name to ID
+- ✅ `get_hashtag_media` — top or recent media for a hashtag
+- ✅ `find_outlier_posts` — posts where engagement is ≥ N × follower count (default 2×)
+- ✅ `analyze_competitor` — one-call breakdown: profile + per-media-type stats + top 5
+- ✅ `discover_fb_setup` — auto-find your IG Business Account ID from a FB Page token
 
 ### Messaging (requires Advanced Access via Meta App Review)
 - ⚠ `get_conversations` — list DM threads
@@ -129,12 +134,34 @@ This is a standard stdio MCP server. Point your client's MCP config at the `pyth
 
 ## Configuration
 
-| Variable                  | Required | Description |
-|---------------------------|----------|-------------|
-| `INSTAGRAM_ACCESS_TOKEN`  | Yes      | Long-lived token from the IG Login API (starts with `IGAA…`) |
-| `INSTAGRAM_APP_ID`        | No       | Meta app ID (currently unused; reserved for future OAuth helpers) |
-| `INSTAGRAM_APP_SECRET`    | No       | Meta app secret (reserved for future OAuth helpers) |
-| `INSTAGRAM_API_VERSION`   | No       | Graph API version (default `v23.0`) |
+| Variable                       | Required | Description |
+|--------------------------------|----------|-------------|
+| `INSTAGRAM_ACCESS_TOKEN`       | Yes      | Long-lived token from the IG Login API (starts with `IGAA…`) |
+| `INSTAGRAM_APP_ID`             | No       | Meta app ID (currently unused; reserved for future OAuth helpers) |
+| `INSTAGRAM_APP_SECRET`         | No       | Meta app secret (reserved for future OAuth helpers) |
+| `INSTAGRAM_API_VERSION`        | No       | Graph API version (default `v23.0`) |
+| `INSTAGRAM_FB_ACCESS_TOKEN`    | No       | Optional FB Graph API Page token (`EAA…`). Unlocks `business_discovery`, `find_outlier_posts`, `analyze_competitor`, hashtag search. |
+| `INSTAGRAM_FB_IG_USER_ID`      | No       | Your IG Business Account ID (paired with the FB token above). Auto-discoverable via `discover_fb_setup`. |
+| `INSTAGRAM_DATA_DIR`           | No       | Path for local persistence (default `~/.instagram-mcp/`). |
+
+### Optional: enable Facebook Graph API extras
+
+Meta deliberately restricts a handful of endpoints to the FB Graph API path (`graph.facebook.com`):
+
+- `business_discovery` — look up any public Business/Creator account
+- `ig_hashtag_search` / `top_media` / `recent_media` — hashtag analytics
+- and the higher-level `find_outlier_posts` / `analyze_competitor` tools this server builds on top
+
+You can opt in by giving the server a Facebook Page access token in addition to your `IGAA…` token. Steps:
+
+1. **Link your IG account to a Facebook Page.** In IG: Settings → Accounts Center → Connected experiences → connect your FB Page. The Page can be brand-new and empty.
+2. **Generate a Page access token** in the Meta dev console with these scopes: `pages_show_list`, `pages_read_engagement`, `instagram_basic`, `instagram_manage_insights`, `business_management`. You want the **long-lived** Page token (not user token).
+3. **Set `INSTAGRAM_FB_ACCESS_TOKEN`** to that `EAA…` token.
+4. **Call the `discover_fb_setup` tool** from your MCP client. It will list your Pages and their linked IG Business Account IDs.
+5. **Set `INSTAGRAM_FB_IG_USER_ID`** to the IG Business Account ID returned in step 4.
+6. **Restart your MCP client** (Claude Desktop quit + reopen, etc.).
+
+Once configured, the previously-stubbed tools start hitting the FB Graph API and returning real data. Without these env vars set, those tools cleanly return a `FBGraphTokenMissing` error pointing back to this setup.
 
 ## Rate limits
 
