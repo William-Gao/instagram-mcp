@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .. import token_manager
 from ..server import format_error, get_client, mcp
 
 PROFILE_FIELDS = (
@@ -29,8 +30,9 @@ async def validate_access_token() -> dict[str, Any]:
 async def refresh_access_token() -> dict[str, Any]:
     """Refresh the current long-lived Instagram access token (extends by 60 days).
 
-    Only works on long-lived tokens that are at least 24 hours old. The new token
-    is returned but NOT persisted to .env; you must update your config manually.
+    Low-level: returns the new token but does NOT persist it. For the managed,
+    persist-to-.env version (plus FB health), use `refresh_tokens`.
+    Only works on long-lived tokens that are at least 24 hours old.
     """
     try:
         client = get_client()
@@ -39,6 +41,26 @@ async def refresh_access_token() -> dict[str, Any]:
             params={"grant_type": "ig_refresh_token"},
         )
         return {"ok": True, "token": data, "note": "Update INSTAGRAM_ACCESS_TOKEN with the new access_token to persist."}
+    except Exception as e:
+        return format_error(e)
+
+
+@mcp.tool()
+async def refresh_tokens(force: bool = False) -> dict[str, Any]:
+    """Managed token refresh: refresh the IGAA token if due and persist it to .env,
+    then report Facebook Page-token health.
+
+    Args:
+        force: Refresh the IGAA token even if it isn't within the refresh window
+            (still skipped by Instagram if the token is <24h old).
+
+    Returns a report with `igaa`, `fb`, and a top-level `needs_attention` flag.
+    A fully-expired/invalid token CANNOT be refreshed here — the report will set
+    `needs_reauth: True`, signalling that an interactive Instagram/Facebook login
+    is required.
+    """
+    try:
+        return await token_manager.run(force=force)
     except Exception as e:
         return format_error(e)
 

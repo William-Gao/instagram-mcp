@@ -2,8 +2,14 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
 
 from dotenv import load_dotenv
+
+# The repo-root .env is the single source of truth for tokens/credentials.
+# Resolve it relative to this file so it loads regardless of the process cwd
+# (an MCP server is rarely launched from the repo directory).
+ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 
 
 @dataclass(frozen=True)
@@ -20,6 +26,10 @@ class Config:
 
     @classmethod
     def from_env(cls) -> Config:
+        # Load the repo .env first (authoritative), then fall back to a cwd .env.
+        # Neither overrides variables already present in the process environment,
+        # so an explicit env var still wins if you need to override.
+        load_dotenv(ENV_PATH)
         load_dotenv()
         token = os.getenv("INSTAGRAM_ACCESS_TOKEN", "").strip()
         if not token:
