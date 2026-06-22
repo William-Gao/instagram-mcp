@@ -72,6 +72,38 @@ trial-only until you graduate it in the Instagram app; `"SS_PERFORMANCE"` lets
 Meta auto-graduate it on early performance. (Resumable/`upload_type` chunked
 uploads are not implemented — media is supplied by public URL only.)
 
+**Examples** (tool arguments):
+
+```python
+# Image with alt text, a tagged user, and a location
+publish_image(
+    image_url="https://cdn.example.com/post.jpg",
+    caption="Launch day 🚀 #startup",
+    alt_text="Team holding a launch banner",
+    user_tags=[{"username": "cofounder", "x": 0.5, "y": 0.4}],
+    location_id="123456789",
+)
+
+# Trial Reel (shown to non-followers first), with a named original audio
+publish_reel(
+    video_url="https://cdn.example.com/clip.mp4",
+    caption="3 money tips 👇",
+    trial=True,
+    graduation_strategy="MANUAL",
+    audio_name="Quiet Wealth — Tip Drops",
+)
+
+# Carousel with per-item alt text / tags
+publish_carousel(
+    items=[
+        {"image_url": "https://cdn.example.com/1.jpg", "alt_text": "Q1 chart"},
+        {"video_url": "https://cdn.example.com/2.mp4"},
+    ],
+    caption="Swipe →",
+    collaborators=["partnerhandle"],
+)
+```
+
 ### Comments
 - ✅ `get_comments` — list comments + nested replies
 - ✅ `post_comment` — top-level comment on your own post
