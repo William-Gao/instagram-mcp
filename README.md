@@ -42,9 +42,67 @@ Status legend: ✅ working, ⚠ requires Advanced Access via Meta App Review, �
 ### Publishing
 - ✅ `publish_image` — single image post
 - ✅ `publish_video` — single feed video
-- ✅ `publish_reel` — Reels (vertical short video), with `share_to_feed`
+- ✅ `publish_reel` — Reels (vertical short video), incl. `share_to_feed` and **Trial Reels** (`trial=True`)
 - ✅ `publish_carousel` — 2–10 image/video carousel
 - ✅ `get_content_publishing_limit` — remaining posts in 24h window
+
+All publish tools expose the full set of Instagram container parameters (see
+[`POST /{ig-user-id}/media`](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/)),
+applied per media type:
+
+| Parameter | image | video | reel | carousel | Notes |
+|---|:---:|:---:|:---:|:---:|---|
+| `caption` | ✅ | ✅ | ✅ | ✅ (parent) | max 2200 chars, 30 hashtags, 20 @mentions |
+| `alt_text` | ✅ | – | – | ✅ (per item) | accessibility text, images only, max 1000 chars |
+| `location_id` | ✅ | ✅ | ✅ | ✅ | Facebook Page ID of a location |
+| `user_tags` | ✅ | ✅ | ✅ | ✅ (per item) | `[{"username","x","y"}]`; `x`/`y` (0–1) required for images |
+| `product_tags` | ✅ | ✅ | – | ✅ (per item) | `[{"product_id","x","y"}]`, max 5; needs a Shopping catalog |
+| `collaborators` | ✅ | – | ✅ | ✅ | up to 3 usernames; not allowed on trial reels |
+| `is_ai_generated` | ✅ | ✅ | ✅ | ✅ | self-disclose AI-generated content |
+| `is_paid_partnership` | ✅ | ✅ | ✅ | ✅ | mark as paid partnership |
+| `share_to_feed` | – | – | ✅ | – | also show the reel in the Feed tab |
+| `thumb_offset` | – | ✅ | ✅ | – | cover-frame timestamp (ms) |
+| `cover_url` | – | – | ✅ | – | custom cover image (overrides `thumb_offset`) |
+| `audio_name` | – | – | ✅ | – | rename the reel's original audio (one-time) |
+| `trial` / `graduation_strategy` | – | – | ✅ | – | Trial Reel (non-followers first); `MANUAL` or `SS_PERFORMANCE` |
+
+**Trial Reels:** pass `trial=True` to `publish_reel` to publish to non-followers
+first. Requires ≥1,000 followers. `graduation_strategy="MANUAL"` keeps it
+trial-only until you graduate it in the Instagram app; `"SS_PERFORMANCE"` lets
+Meta auto-graduate it on early performance. (Resumable/`upload_type` chunked
+uploads are not implemented — media is supplied by public URL only.)
+
+**Examples** (tool arguments):
+
+```python
+# Image with alt text, a tagged user, and a location
+publish_image(
+    image_url="https://cdn.example.com/post.jpg",
+    caption="Launch day 🚀 #startup",
+    alt_text="Team holding a launch banner",
+    user_tags=[{"username": "cofounder", "x": 0.5, "y": 0.4}],
+    location_id="123456789",
+)
+
+# Trial Reel (shown to non-followers first), with a named original audio
+publish_reel(
+    video_url="https://cdn.example.com/clip.mp4",
+    caption="3 money tips 👇",
+    trial=True,
+    graduation_strategy="MANUAL",
+    audio_name="Quiet Wealth — Tip Drops",
+)
+
+# Carousel with per-item alt text / tags
+publish_carousel(
+    items=[
+        {"image_url": "https://cdn.example.com/1.jpg", "alt_text": "Q1 chart"},
+        {"video_url": "https://cdn.example.com/2.mp4"},
+    ],
+    caption="Swipe →",
+    collaborators=["partnerhandle"],
+)
+```
 
 ### Comments
 - ✅ `get_comments` — list comments + nested replies
@@ -58,11 +116,11 @@ Status legend: ✅ working, ⚠ requires Advanced Access via Meta App Review, �
 - ✅ `get_account_insights` — reach, profile views, audience demographics, etc.
 
 ### Discovery (opt-in via FB Graph API — set `INSTAGRAM_FB_ACCESS_TOKEN`)
-- ✅ `business_discovery` — public Business/Creator profile + recent media
+- ✅ `business_discovery` — public Business/Creator profile + recent media (incl. real `view_count` on their videos/reels)
 - ✅ `search_hashtag` — resolve hashtag name to ID
 - ✅ `get_hashtag_media` — top or recent media for a hashtag
-- ✅ `find_outlier_posts` — posts where engagement is ≥ N × follower count (default 2×)
-- ✅ `analyze_competitor` — one-call breakdown: profile + per-media-type stats + top 5
+- ✅ `find_outlier_posts` — posts where engagement is ≥ N × follower count (default 2×); the `views` metric uses the target's real `view_count`
+- ✅ `analyze_competitor` — one-call breakdown: profile + per-media-type stats (likes + views) + top 5
 - ✅ `discover_fb_setup` — auto-find your IG Business Account ID from a FB Page token
 
 ### Messaging (requires Advanced Access via Meta App Review)
@@ -196,6 +254,11 @@ The Instagram Login API is more restrictive than the Facebook Graph API in three
 3. **DMs** — Available, but require `instagram_business_manage_messages` with Advanced Access. Meta only grants this after App Review.
 
 If you need any of these three capabilities, you must link your IG to a Facebook Page and use a Facebook-Graph-based MCP like [`mcpware/instagram-mcp`](https://github.com/mcpware/instagram-mcp) or [`AleemHaider/instagram-mcp`](https://github.com/AleemHaider/instagram-mcp).
+
+Two further limits apply to **all** Instagram APIs (official or otherwise), not just this one:
+
+- **Close Friends targeting is not available.** The Content Publishing API exposes no audience/visibility parameter, and Meta's docs explicitly flag close-friends-only posts as unsupported. Everything published is public/to-followers; Close Friends is an Instagram-app-only feature.
+- **Stories publishing is read-only here.** `get_stories` lists active stories, but there is no story-publish tool yet (the container flow supports `media_type=STORIES`; it's simply not wired up).
 
 ## Acknowledgements
 
