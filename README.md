@@ -195,8 +195,8 @@ This is a standard stdio MCP server. Point your client's MCP config at the `pyth
 | Variable                       | Required | Description |
 |--------------------------------|----------|-------------|
 | `INSTAGRAM_ACCESS_TOKEN`       | Yes      | Long-lived token from the IG Login API (starts with `IGAA…`) |
-| `INSTAGRAM_APP_ID`             | No       | Meta app ID (currently unused; reserved for future OAuth helpers) |
-| `INSTAGRAM_APP_SECRET`         | No       | Meta app secret (reserved for future OAuth helpers) |
+| `INSTAGRAM_APP_ID`             | No       | Meta app ID. Used by `token_manager` for FB token debug/exchange. |
+| `INSTAGRAM_APP_SECRET`         | No       | Meta app secret. Used by `token_manager` for FB token debug/exchange. |
 | `INSTAGRAM_API_VERSION`        | No       | Graph API version (default `v23.0`) |
 | `INSTAGRAM_FB_ACCESS_TOKEN`    | No       | Optional FB Graph API Page token (`EAA…`). Unlocks `business_discovery`, `find_outlier_posts`, `analyze_competitor`, hashtag search. |
 | `INSTAGRAM_FB_IG_USER_ID`      | No       | Your IG Business Account ID (paired with the FB token above). Auto-discoverable via `discover_fb_setup`. |
@@ -229,7 +229,21 @@ Once configured, the previously-stubbed tools start hitting the FB Graph API and
 
 ## Token lifecycle
 
-Long-lived tokens last **60 days**. Call `refresh_access_token` at least every 60 days (only works on tokens at least 24 hours old) and update `INSTAGRAM_ACCESS_TOKEN` in `.env` with the returned value.
+- **IGAA (Instagram Login) token** — long-lived tokens last **60 days** and can be refreshed any time after they're **≥24h old** (extends another 60 days).
+- **FB Page token** (`EAA…`, for discovery) — effectively **non-expiring**, but Meta's **data-access window (~90 days)** eventually requires an interactive re-authorization.
+
+### Managed refresh (recommended)
+
+Use the **`refresh_tokens`** MCP tool, or run the module directly, to refresh the IGAA token *and persist it to `.env`*, plus report FB token health:
+
+```bash
+python -m instagram_mcp.token_manager          # refresh if due + report
+python -m instagram_mcp.token_manager --force  # force an IGAA refresh attempt
+```
+
+Schedule that command (cron / Task Scheduler) every ~30 days so the IGAA token never lapses. It writes the new token, plus `INSTAGRAM_ACCESS_TOKEN_REFRESHED_AT` / `INSTAGRAM_ACCESS_TOKEN_EXPIRES_AT`, back to `.env` (the single source of truth — loaded by `config.py` regardless of cwd). Exit code **2** means a token is dead and needs attention.
+
+> **It cannot self-heal a dead token.** A *fully expired/invalidated* IGAA token, or a lapsed FB data-access window, can only be fixed by an **interactive (browser) re-authorization** — Meta provides no programmatic path. In that case the report sets `needs_reauth: true`; treat it as an alert to re-run the login flow, not something automation can recover from.
 
 ## Contributing
 
