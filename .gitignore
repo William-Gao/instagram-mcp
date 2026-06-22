@@ -25,3 +25,7 @@ htmlcov/
 *.swp
 *.swo
 LAUNCH.md
+
+# Local-only working notes / agent context (never commit)
+SESSION.md
+CLAUDE.md
