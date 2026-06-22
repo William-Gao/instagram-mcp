@@ -23,6 +23,9 @@ def base_env(monkeypatch, tmp_path):
     env_file = tmp_path / ".env"
     env_file.write_text("")
     monkeypatch.setattr("instagram_mcp.config.ENV_PATH", env_file)
+    # Neutralize dotenv loading so tests depend only on the monkeypatched env,
+    # never on the real repo .env (which now holds live tokens).
+    monkeypatch.setattr("instagram_mcp.config.load_dotenv", lambda *a, **k: None)
     monkeypatch.setenv("INSTAGRAM_ACCESS_TOKEN", "OLDIGAA")
     monkeypatch.delenv("INSTAGRAM_ACCESS_TOKEN_REFRESHED_AT", raising=False)
     monkeypatch.delenv("INSTAGRAM_ACCESS_TOKEN_EXPIRES_AT", raising=False)

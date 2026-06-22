@@ -4,13 +4,13 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP](https://img.shields.io/badge/MCP-1.2+-purple.svg)](https://modelcontextprotocol.io/)
 
-A Model Context Protocol server for Instagram that uses Meta's **Instagram Platform API with Instagram Login** (`graph.instagram.com`, `IGAA…` tokens). **No Facebook Page required.** **No private/scraping APIs.** 27 tools covering profile, media, publishing, comments, insights, and DMs — verified live against a real account.
+A Model Context Protocol server for Instagram that uses Meta's **Instagram Platform API with Instagram Login** (`graph.instagram.com`, `IGAA…` tokens). **No Facebook Page required.** **No private/scraping APIs.** 25 tools covering profile, media, publishing, comments, insights, and DMs — verified live against a real account.
 
 ## How this is different from other Instagram MCPs
 
 | Project | Auth model | FB Page required | Risk of ban | Tools | Status |
 |---|---|---|---|---|---|
-| **this (`William-Gao/instagram-mcp`)** | **Dual: IG Login + FB Graph** | **Optional** (only for discovery/hashtags) | **None — official API** | **30 (27 working ✅)** | Active |
+| **this (`William-Gao/instagram-mcp`)** | **Dual: IG Login + FB Graph** | **Optional** (only for discovery/hashtags) | **None — official API** | **28 (25 working ✅)** | Active |
 | [`mcpware/instagram-mcp`](https://github.com/mcpware/instagram-mcp) | Facebook Graph API (`EAA…`) | Yes | None — official API | 23 | Active |
 | [`AleemHaider/instagram-mcp`](https://github.com/AleemHaider/instagram-mcp) | Facebook Graph API (`EAA…`) | Yes | None — official API | ~15 | Active |
 | [`supercorp-ai/instagram-mcp`](https://github.com/supercorp-ai/instagram-mcp) | Instagram Login API (`IGAA…`) | No | None — official API | 4 | Active |
@@ -18,11 +18,11 @@ A Model Context Protocol server for Instagram that uses Meta's **Instagram Platf
 
 The gap this fills: Meta launched **Instagram Login** in July 2024 so creators can use the API *without* a linked Facebook Page. Before this project, the only MCP that spoke that auth flow was `supercorp-ai/instagram-mcp` with 4 tools. Everything else either requires you to maintain a FB Page or scrapes Instagram through the unofficial mobile API.
 
-**This server is the only one that supports BOTH auth paths simultaneously.** Configure just `INSTAGRAM_ACCESS_TOKEN` (IGAA) and you get the 24 core tools without a Facebook Page. Add `INSTAGRAM_FB_ACCESS_TOKEN` (EAA) on top and you unlock `business_discovery`, hashtag search, and the higher-level competitor-analysis tools — without giving up anything on the IG Login side.
+**This server is the only one that supports BOTH auth paths simultaneously.** Configure just `INSTAGRAM_ACCESS_TOKEN` (IGAA) and you get the 24 core tools without a Facebook Page. Add `INSTAGRAM_FB_ACCESS_TOKEN` (EAA) on top and you unlock `business_discovery` and hashtag search — without giving up anything on the IG Login side.
 
 **TL;DR — start with just IG Login. Add the FB Page later only if you need to look up other creators.**
 
-## Tool catalog (27)
+## Tool catalog (25)
 
 Status legend: ✅ working, ⚠ requires Advanced Access via Meta App Review, 🚫 not supported by the Instagram Login API (Facebook Graph API only).
 
@@ -119,9 +119,9 @@ publish_carousel(
 - ✅ `business_discovery` — public Business/Creator profile + recent media (incl. real `view_count` on their videos/reels)
 - ✅ `search_hashtag` — resolve hashtag name to ID
 - ✅ `get_hashtag_media` — top or recent media for a hashtag
-- ✅ `find_outlier_posts` — posts where engagement is ≥ N × follower count (default 2×); the `views` metric uses the target's real `view_count`
-- ✅ `analyze_competitor` — one-call breakdown: profile + per-media-type stats (likes + views) + top 5
 - ✅ `discover_fb_setup` — auto-find your IG Business Account ID from a FB Page token
+
+`business_discovery` is a raw pass-through to Meta's Business Discovery API: pass an optional `fields` projection (e.g. `media.limit(5){id,view_count,like_count}`) to shape exactly what comes back, including the public `view_count` on a creator's videos/reels.
 
 ### Messaging (requires Advanced Access via Meta App Review)
 - ⚠ `get_conversations` — list DM threads
@@ -198,7 +198,7 @@ This is a standard stdio MCP server. Point your client's MCP config at the `pyth
 | `INSTAGRAM_APP_ID`             | No       | Meta app ID. Used by `token_manager` for FB token debug/exchange. |
 | `INSTAGRAM_APP_SECRET`         | No       | Meta app secret. Used by `token_manager` for FB token debug/exchange. |
 | `INSTAGRAM_API_VERSION`        | No       | Graph API version (default `v23.0`) |
-| `INSTAGRAM_FB_ACCESS_TOKEN`    | No       | Optional FB Graph API Page token (`EAA…`). Unlocks `business_discovery`, `find_outlier_posts`, `analyze_competitor`, hashtag search. |
+| `INSTAGRAM_FB_ACCESS_TOKEN`    | No       | Optional FB Graph API Page token (`EAA…`). Unlocks `business_discovery` and hashtag search. |
 | `INSTAGRAM_FB_IG_USER_ID`      | No       | Your IG Business Account ID (paired with the FB token above). Auto-discoverable via `discover_fb_setup`. |
 | `INSTAGRAM_DATA_DIR`           | No       | Path for local persistence (default `~/.instagram-mcp/`). |
 
@@ -208,7 +208,6 @@ Meta deliberately restricts a handful of endpoints to the FB Graph API path (`gr
 
 - `business_discovery` — look up any public Business/Creator account
 - `ig_hashtag_search` / `top_media` / `recent_media` — hashtag analytics
-- and the higher-level `find_outlier_posts` / `analyze_competitor` tools this server builds on top
 
 You can opt in by giving the server a Facebook Page access token in addition to your `IGAA…` token. Steps:
 
