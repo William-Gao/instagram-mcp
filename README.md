@@ -42,9 +42,35 @@ Status legend: ✅ working, ⚠ requires Advanced Access via Meta App Review, �
 ### Publishing
 - ✅ `publish_image` — single image post
 - ✅ `publish_video` — single feed video
-- ✅ `publish_reel` — Reels (vertical short video), with `share_to_feed`
+- ✅ `publish_reel` — Reels (vertical short video), incl. `share_to_feed` and **Trial Reels** (`trial=True`)
 - ✅ `publish_carousel` — 2–10 image/video carousel
 - ✅ `get_content_publishing_limit` — remaining posts in 24h window
+
+All publish tools expose the full set of Instagram container parameters (see
+[`POST /{ig-user-id}/media`](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/)),
+applied per media type:
+
+| Parameter | image | video | reel | carousel | Notes |
+|---|:---:|:---:|:---:|:---:|---|
+| `caption` | ✅ | ✅ | ✅ | ✅ (parent) | max 2200 chars, 30 hashtags, 20 @mentions |
+| `alt_text` | ✅ | – | – | ✅ (per item) | accessibility text, images only, max 1000 chars |
+| `location_id` | ✅ | ✅ | ✅ | ✅ | Facebook Page ID of a location |
+| `user_tags` | ✅ | ✅ | ✅ | ✅ (per item) | `[{"username","x","y"}]`; `x`/`y` (0–1) required for images |
+| `product_tags` | ✅ | ✅ | – | ✅ (per item) | `[{"product_id","x","y"}]`, max 5; needs a Shopping catalog |
+| `collaborators` | ✅ | – | ✅ | ✅ | up to 3 usernames; not allowed on trial reels |
+| `is_ai_generated` | ✅ | ✅ | ✅ | ✅ | self-disclose AI-generated content |
+| `is_paid_partnership` | ✅ | ✅ | ✅ | ✅ | mark as paid partnership |
+| `share_to_feed` | – | – | ✅ | – | also show the reel in the Feed tab |
+| `thumb_offset` | – | ✅ | ✅ | – | cover-frame timestamp (ms) |
+| `cover_url` | – | – | ✅ | – | custom cover image (overrides `thumb_offset`) |
+| `audio_name` | – | – | ✅ | – | rename the reel's original audio (one-time) |
+| `trial` / `graduation_strategy` | – | – | ✅ | – | Trial Reel (non-followers first); `MANUAL` or `SS_PERFORMANCE` |
+
+**Trial Reels:** pass `trial=True` to `publish_reel` to publish to non-followers
+first. Requires ≥1,000 followers. `graduation_strategy="MANUAL"` keeps it
+trial-only until you graduate it in the Instagram app; `"SS_PERFORMANCE"` lets
+Meta auto-graduate it on early performance. (Resumable/`upload_type` chunked
+uploads are not implemented — media is supplied by public URL only.)
 
 ### Comments
 - ✅ `get_comments` — list comments + nested replies
@@ -196,6 +222,11 @@ The Instagram Login API is more restrictive than the Facebook Graph API in three
 3. **DMs** — Available, but require `instagram_business_manage_messages` with Advanced Access. Meta only grants this after App Review.
 
 If you need any of these three capabilities, you must link your IG to a Facebook Page and use a Facebook-Graph-based MCP like [`mcpware/instagram-mcp`](https://github.com/mcpware/instagram-mcp) or [`AleemHaider/instagram-mcp`](https://github.com/AleemHaider/instagram-mcp).
+
+Two further limits apply to **all** Instagram APIs (official or otherwise), not just this one:
+
+- **Close Friends targeting is not available.** The Content Publishing API exposes no audience/visibility parameter, and Meta's docs explicitly flag close-friends-only posts as unsupported. Everything published is public/to-followers; Close Friends is an Instagram-app-only feature.
+- **Stories publishing is read-only here.** `get_stories` lists active stories, but there is no story-publish tool yet (the container flow supports `media_type=STORIES`; it's simply not wired up).
 
 ## Acknowledgements
 
