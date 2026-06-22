@@ -95,7 +95,7 @@ async def find_outlier_posts(
     username = target_username.lstrip("@")
     media_fields = (
         "id,media_type,media_product_type,permalink,caption,timestamp,"
-        "like_count,comments_count,thumbnail_url,media_url"
+        "like_count,comments_count,view_count,thumbnail_url,media_url"
     )
     limit = max(1, min(50, media_limit))
     fields = (
@@ -128,12 +128,10 @@ async def find_outlier_posts(
             return p.get("like_count") or 0
         if metric == "comments":
             return p.get("comments_count") or 0
-        # Default "views" - the FB Graph API exposes plays via media insights but the
-        # business_discovery payload only carries like_count + comments_count for the
-        # target. We approximate "views" as like_count for non-reels and like_count*N
-        # for reels (since Reels typically pull ~10x likes in views).
-        # Honest disclosure: cross-account view_count is NOT exposed in business_discovery.
-        return p.get("like_count") or 0
+        # Default "views": business_discovery DOES expose view_count for the target's
+        # videos/reels (verified live). Static images have no plays, so fall back to
+        # like_count for those.
+        return p.get("view_count") or p.get("like_count") or 0
 
     enriched = []
     for p in posts:
@@ -162,10 +160,10 @@ async def find_outlier_posts(
         "outlier_count": len(outliers),
         "outliers": outliers,
         "_note": (
-            "business_discovery returns like_count and comments_count but NOT view_count "
-            "for other accounts. The 'views' metric here approximates from likes. For "
-            "a true view-count benchmark you would need to scrape the public IG web page "
-            "or use a 3rd-party analytics provider (Modash, HypeAuditor, social-blade)."
+            "The 'views' metric uses the target's real view_count (business_discovery "
+            "exposes view_count for videos/reels); static images without a view_count "
+            "fall back to like_count. Coverage is the most recent media.limit() posts "
+            "(max 50 per Meta), not the account's full history."
         ),
     }
 
@@ -190,7 +188,7 @@ async def analyze_competitor(target_username: str, media_limit: int = 50) -> dic
     username = target_username.lstrip("@")
     media_fields = (
         "id,media_type,media_product_type,permalink,caption,timestamp,"
-        "like_count,comments_count,thumbnail_url"
+        "like_count,comments_count,view_count,thumbnail_url"
     )
     limit = max(1, min(50, media_limit))
     fields = (
@@ -237,10 +235,13 @@ async def analyze_competitor(target_username: str, media_limit: int = 50) -> dic
             continue
         rates = [eng_rate(p) for p in ps]
         likes = [p.get("like_count") or 0 for p in ps]
+        views = [p.get("view_count") or 0 for p in ps]
         type_stats[t] = {
             "count": len(ps),
             "avg_likes": sum(likes) / len(likes),
             "median_likes": sorted(likes)[len(likes) // 2],
+            "avg_views": sum(views) / len(views),
+            "max_views": max(views),
             "avg_engagement_rate": sum(rates) / len(rates),
             "max_likes": max(likes),
         }
@@ -267,6 +268,7 @@ async def analyze_competitor(target_username: str, media_limit: int = 50) -> dic
                 "type": p.get("media_product_type") or p.get("media_type"),
                 "like_count": p.get("like_count"),
                 "comments_count": p.get("comments_count"),
+                "view_count": p.get("view_count"),
                 "engagement_rate": round(eng_rate(p), 4),
                 "engagement_vs_followers_x": round(
                     (p.get("like_count") or 0) / followers, 2

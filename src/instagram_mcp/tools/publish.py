@@ -97,7 +97,9 @@ async def publish_image(
     """Publish a single image to Instagram.
 
     Args:
-        image_url: Publicly accessible HTTPS URL to a JPEG/PNG image.
+        image_url: Publicly accessible HTTPS URL to a JPEG image. Meta officially
+            supports JPEG only; PNG often works via server-side transcoding but is
+            not guaranteed.
         caption: Optional caption (max 2200 chars, max 30 hashtags, max 20 @mentions).
         alt_text: Accessibility text describing the image (max 1000 chars).
         location_id: Facebook Page ID of a location to tag.

@@ -84,11 +84,11 @@ uploads are not implemented — media is supplied by public URL only.)
 - ✅ `get_account_insights` — reach, profile views, audience demographics, etc.
 
 ### Discovery (opt-in via FB Graph API — set `INSTAGRAM_FB_ACCESS_TOKEN`)
-- ✅ `business_discovery` — public Business/Creator profile + recent media
+- ✅ `business_discovery` — public Business/Creator profile + recent media (incl. real `view_count` on their videos/reels)
 - ✅ `search_hashtag` — resolve hashtag name to ID
 - ✅ `get_hashtag_media` — top or recent media for a hashtag
-- ✅ `find_outlier_posts` — posts where engagement is ≥ N × follower count (default 2×)
-- ✅ `analyze_competitor` — one-call breakdown: profile + per-media-type stats + top 5
+- ✅ `find_outlier_posts` — posts where engagement is ≥ N × follower count (default 2×); the `views` metric uses the target's real `view_count`
+- ✅ `analyze_competitor` — one-call breakdown: profile + per-media-type stats (likes + views) + top 5
 - ✅ `discover_fb_setup` — auto-find your IG Business Account ID from a FB Page token
 
 ### Messaging (requires Advanced Access via Meta App Review)
