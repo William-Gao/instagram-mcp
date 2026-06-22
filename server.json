@@ -1,0 +1,38 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "instagram-mcp",
+  "title": "Instagram MCP",
+  "description": "MCP server for the Instagram Platform API (Instagram Login, no Facebook Page required) — 25 tools for profile, media, publishing (incl. Trial Reels), comments, insights, DMs, and Business Discovery.",
+  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/William-Gao/instagram-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "instagram-mcp",
+      "version": "0.1.0",
+      "transport": { "type": "stdio" },
+      "runtimeHint": "uvx",
+      "environmentVariables": [
+        {
+          "name": "INSTAGRAM_ACCESS_TOKEN",
+          "description": "Long-lived Instagram Login access token (starts with IGAA…)",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "INSTAGRAM_FB_ACCESS_TOKEN",
+          "description": "Optional Facebook Graph Page token (EAA…) — enables Business Discovery and hashtag tools",
+          "isSecret": true
+        },
+        {
+          "name": "INSTAGRAM_FB_IG_USER_ID",
+          "description": "IG Business Account ID, paired with the FB token (find via discover_fb_setup)"
+        }
+      ]
+    }
+  ]
+}
